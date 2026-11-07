@@ -1,23 +1,55 @@
+# SNOW technical overview
 
-### What type of data does SNOW collect? (Technical details)
+**Review draft prepared 7 November 2026.** Engineering confirmation is required before treating this refresh as an approved deployment specification. The previous README is preserved in the [June 2016 archive](docs/archive/README-2016-06-06.md).
 
-Host telemetry gathering is at the core of SNOW’s approach to defending infrastructure: SNOW has two polling streams for each agent, and each poll at random intervals to reduce their predictability from an attacker’s perspective.
+SNOW combines endpoint evidence, backend correlation and human-led investigation. It brings process activity, host state, network relationships and external intelligence into a workflow for investigating suspicious activity and coordinating authorized follow-up.
 
-##### The base module (which handles loading and updating the sensor module) polls with a mean average of 10 minutes; 
-##### The sensor module, which acquires the telemetry, polls with mean 2 minutes. 
+Collection depends on the operating system, sensor version, enabled profile and engagement scope. A capability described here is not a promise that every collector or response action is enabled on every host. Event schemas, limits and configuration defaults must be matched to the deployed version.
 
-The following data is automatically collected from SNOW; however, please note that any of these collections can be turned off without rebuilding the agent by using dynamic configurations:
-* List of running process, along with path of program, list of included DLLs with paths, and SHA-1 hash of each executable module
-* List of registered services (with metadata)
-* List of loaded drivers (with metadata)
-* List of auto-run programs (with metadata)
-* List of installed programs
-* Time when processes start and end
-* Processes running "cloaked" (e.g. obtained through brute-force polling of all possible PIDs on a system that don't appear in a normal process listing)
-* Metadata (path, size, access times) on files considered suspicious (e.g. program that was running cloaked)
-* Domains to which DNS requests were issued
-* Metadata (IP, port) of UDP and TCP network connections
-* Metadata on files added, removed or modified into directories of interest (exactly which depend on OS and specific client sensitivity)
-* For programs chosen at random, memory pages marked as executable are scanned for the presence of recognizable artifacts of executable code - memory pages are not transferred as telemetry
-* History of IP addresses used by the machine
-* Performance metrics of the agent itself as well as lists of agent execution checkpoints
+## Platform responsibilities
+
+| Component | Responsibility |
+| --- | --- |
+| SNOW Sensor | Collect configured endpoint records, raise host-side findings and support scoped follow-up collection. |
+| SNOW Cloud | Organize records, correlate activity, apply detection rules, group investigation leads and add external context. |
+| SNOWboard | Present investigation, Timeline, process, host, network and Perimeter context to authorized users, with evidence navigation and exports. |
+| Analysts and operators | Evaluate the evidence, document uncertainty and decide or obtain authority for response. |
+
+## Technical documentation
+
+- [Telemetry and evidence](docs/telemetry-and-evidence.md): data families, collection modes, memory artifacts and sensitive content.
+- [Correlation and AI tool tracking](docs/correlation-and-ai-tool-tracking.md): process/network relationships, external enrichment, AI-agent sessions and rollout boundaries.
+- [Deployment and security scope](docs/deployment-and-security-scope.md): the versioned deployment record, access, task authority, retention and validation.
+- [Historical telemetry notes](docs/archive/README-2016-06-06.md): the original 2016 description, not current defaults.
+
+## Capability and rollout scope
+
+| Capability | Scope of this overview |
+| --- | --- |
+| Endpoint activity and host-state collection | Available through configured collectors; coverage and fields vary by platform, version and profile. |
+| Memory and covert-execution investigation | Findings and available follow-up artifacts support review. A detection does not guarantee that the relevant memory bytes were retained. |
+| Cross-host process relationships | Require suitable observations from both enrolled endpoints. Unknown or off-fleet ends must not be invented. |
+| Shodan and threat-intelligence context | Enrichment has its own source, timestamp and confidence. A public scan is not a live endpoint test. |
+| AI-agent work-session analysis | Backend session tracking relates supported tools to observed process activity and review flags. It is not account-organization verification or proof of a leak. |
+| Selected AI-tool configuration-file changes | Staged and profile-dependent; not universal configuration, account, hook or MCP inventory. |
+| Expanded AI-tool account and configuration inventory | Not established as generally available by this review; do not assume rollout from a design or collector specification. |
+| Additional prompt or transcript collection | Separately scoped and opt-in; not implied by the activity-tracking module. |
+| Broader OSINT investigation layer | Roadmap. Existing external enrichment does not establish a completed OSINT integration. |
+
+## Interpreting findings
+
+A new relationship, a trusted signature, a vulnerable driver or an empty scan is not a verdict by itself. Investigations must distinguish observed events, inferred context, missing evidence and confirmed conclusions.
+
+Collection timing, check-in timing and backend processing delay are different measurements. This overview does not set a universal polling interval, response time, footprint estimate or retention period.
+
+## Review before deployment
+
+Use the [deployment record](docs/deployment-and-security-scope.md#deployment-record) to confirm platform support, collector enablement, field schemas, limits, transport/security settings, data handling and allowed actions. This overview is not a certification, response authorization or statement of legal admissibility.
+
+## Documentation checks
+
+Run the dependency-free Markdown/link and archive checks with:
+
+```sh
+python3 tools/check_docs.py
+```
